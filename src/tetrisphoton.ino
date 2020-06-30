@@ -51,14 +51,53 @@ SYSTEM_MODE(AUTOMATIC);         //Tells device to use WiFi by default
 #define brtsns A4               //Define Photoresistor pin (use 10k pulldown resistor)
 
 
+////////////////////////////////////
+////// GLOBAL VARIABLE LIST ////////
+////////////////////////////////////
+
+int i;                          //Multipurpose counter variables (i and j)
+int j;
+int tetris[PIXEL_COUNT];        //Array to hold Tetris board
 
 void setup() {
-  // Put initialization like pinMode and begin functions here.
-
+    strip.begin();
+    strip.show();
+    for(i = 0; i < PIXEL_COUNT; i++){
+        tetris[i] = 0;
+    }
+    delay(100);
+    tetris[0] = 255000000;
+    tetris[1] = 000255000;
+    tetris[2] = 000000255;
 }
-
+int getRVal(int colorCode){                                                                                         //Filters out Red value from array element
+    return ((colorCode/1000000)%1000);
+}
+int getGVal(int colorCode){                                                                                         //Filters out Green value from array element
+    return ((colorCode/1000)%1000);
+}
+int getBVal(int colorCode){                                                                                         //Filters out Blue value from array element
+    return (colorCode%1000);
+}
+void printBoard(int usrBoard[]){
+    for(i = 0; i < PIXEL_COUNT; i++){
+        if(((i/16)%2) == 0){                                                                                        //Prints standard row
+            strip.setPixelColor(i,getRVal(tetris[i]),getGVal(tetris[i]), getBVal(tetris[i]));
+        }
+        else{                                                                                                       //Reversed row for S configuration (mirror function)
+            if((i%16) < 8){
+                strip.setPixelColor(i+15-((i%16)*2),getRVal(tetris[i]),getGVal(tetris[i]), getBVal(tetris[i]));     //If on the right half of line, add to mirror to other side
+            }
+            else{
+                strip.setPixelColor(i+15-(2*(i%16)),getRVal(tetris[i]),getGVal(tetris[i]), getBVal(tetris[i]));     //If on the left half of line, subtract to mirror to other side
+            }
+        }
+    }
+    strip.show();
+}
 // loop() runs over and over again, as quickly as it can execute.
 void loop() {
   // The core of your code will likely live here.
-
+    printBoard(tetris);
+    delay(5000);
 }

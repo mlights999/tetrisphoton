@@ -1,3 +1,9 @@
+/******************************************************/
+//       THIS IS A GENERATED FILE - DO NOT EDIT       //
+/******************************************************/
+
+#include "Particle.h"
+#line 1 "c:/Users/mligh/OneDrive/Particle/TetrisPhoton/tetrisphoton/src/tetrisphoton.ino"
 
 /*******************************************************************
 *                                                                  *
@@ -23,6 +29,13 @@
 // NEOPIXEL MATRIX CHARACTERISTICS //
 /////////////////////////////////////
 
+void setup();
+int getRVal(int colorCode);
+int getGVal(int colorCode);
+int getBVal(int colorCode);
+void printBoard(int usrBoard[]);
+void loop();
+#line 26 "c:/Users/mligh/OneDrive/Particle/TetrisPhoton/tetrisphoton/src/tetrisphoton.ino"
 #define PIXEL_COUNT 256         //Number of pixels in matrix
 
 #define PIXEL_PIN A2            //Define Hardware pin used for data

@@ -55,15 +55,17 @@ SYSTEM_MODE(MANUAL);         //Tells device to use WiFi by default
 
 void loadPiece(int pid, int orientation, int* off);
 
-bool movePiece(int* currSpot, int direction, int pid, int orientation, int pieceColor, int* userBoard);
+bool movePiece(int* currSpot, int direction, int pid, int orientation, int pieceColor, int * userScore, int * currentLvl, int* userBoard);
 
 void rotatePiece(int currSpot, int pid, int * currOrientation, int newOrientation, int pieceColor, int* userBoard);
 
 bool isSpotLegal(int newSpot, int pid, int orientation, int* userBoard);
 
-void checkForRows(int numRows, int numColumns, int* userBoard);
+void checkForRows(int numRows, int numColumns, int * userScore, int * currLevel, int* userBoard);
 
 void shiftRowsDown(int emptyRow, int numRows, int numColumns, int* userBoard);
+
+void levelUp(int oldLevel, int newLevel, int arraySize, int brtlvl, int* userBoard);
 
 int getPieceColor(int pid, int level, int brtlvl);
 
@@ -79,7 +81,10 @@ int j;
 int pieceSpot;
 int pieceRotation;
 int currentPiece;
+int score;
+int currentLvl;
 int tetris[PIXEL_COUNT];        //Array to hold Tetris board
+int currentDelay;
 
 void setup() {
     pinMode(lbtn, INPUT_PULLDOWN);
@@ -94,6 +99,8 @@ void setup() {
     }
     pieceSpot = 8;
     pieceRotation = 0;
+    score = 0;
+    currentLvl = 0;
 
 }
 int getRVal(int colorCode){                                                                                         //Filters out Red value from array element
@@ -124,18 +131,18 @@ void printBoard(int usrBoard[]){
 void gameDone(){
     delay(20000);
 }
-void waitForButton(int timeDelay, int * currSpot, int pid, int * orientation, int pieceColor, int* userBoard){
+void waitForButton(int timeDelay, int * currSpot, int pid, int * orientation, int pieceColor, int * userScore, int * currLvl, int* userBoard){
     int myTemp;
     for(myTemp = 0; myTemp < (timeDelay/10); myTemp++){
         if(digitalRead(lbtn) == HIGH){
-            movePiece(currSpot,1,pid, *orientation,pieceColor, userBoard);
+            movePiece(currSpot,1,pid, *orientation,pieceColor, userScore, currLvl, userBoard);
             printBoard(tetris);
             while(digitalRead(lbtn) == HIGH){
                 delay(5);
             }
         }
         else if(digitalRead(rbtn) == HIGH){
-            movePiece(currSpot, 2, pid, *orientation, pieceColor, userBoard);
+            movePiece(currSpot, 2, pid, *orientation, pieceColor, userScore, currLvl, userBoard);
             printBoard(tetris);
             while(digitalRead(rbtn) == HIGH){
                 delay(5);
@@ -165,16 +172,17 @@ void waitForButton(int timeDelay, int * currSpot, int pid, int * orientation, in
     return;
 }
 void loop() {
+    currentDelay = 1500 - (currentLvl*200);
     currentPiece = random(7);
     pieceSpot = 8;
     pieceRotation = 0;
-    if(!placePiece(pieceSpot,currentPiece,getPieceColor(currentPiece, 0, 20),tetris)){
+    if(!placePiece(pieceSpot,currentPiece,getPieceColor(currentPiece, currentLvl, 20),tetris)){
         gameDone();
     }
     printBoard(tetris);
-    waitForButton(2000, &pieceSpot, currentPiece, &pieceRotation, getPieceColor(currentPiece, 0, 20), tetris);
-    while(!movePiece(&pieceSpot, 0, currentPiece, pieceRotation, getPieceColor(currentPiece, 0, 20), tetris)){
-        waitForButton(2000, &pieceSpot, currentPiece, &pieceRotation, getPieceColor(currentPiece, 0, 20), tetris);
+    waitForButton(currentDelay, &pieceSpot, currentPiece, &pieceRotation, getPieceColor(currentPiece, currentLvl, 20), &score, &currentLvl, tetris);
+    while(!movePiece(&pieceSpot, 0, currentPiece, pieceRotation, getPieceColor(currentPiece, currentLvl, 20), &score, &currentLvl, tetris)){
+        waitForButton(currentDelay, &pieceSpot, currentPiece, &pieceRotation, getPieceColor(currentPiece, currentLvl, 20), &score, &currentLvl, tetris);
         printBoard(tetris);
     }
     delay(1000);
@@ -354,34 +362,74 @@ bool placePiece(int newSpot, int pid, int pieceColor, int* userBoard){
     
 }
 
+void levelUp(int oldLevel, int newLevel, int arraySize, int brtlvl, int* userBoard){
+    int c1, c2;
+    for(c1 = 0; c1 < 7; c1++){
+        for(c2 = 0; c2 < arraySize; c2++){
+            if(userBoard[c2] == getPieceColor(c1, oldLevel, brtlvl)){
+                userBoard[c2] = getPieceColor(c1, newLevel, brtlvl);
+            }
+        }
+    }
+    return;
+}
+
 int getPieceColor(int pid, int level, int brtlvl){
-    switch (pid)
-    {
-        case 0:
-            return (1000000000+brtlvl);
-            break;
-        case 1:
-            return (1000000000+brtlvl+(1000*brtlvl));
-            break;
-        case 2:
-            return (1000000000+brtlvl+(1000*(brtlvl/2)));
-            break;
-        case 3:
-            return (1000000000+(brtlvl/2)+(1000*(brtlvl/5)));
-            break;    
-        case 4:
-            return (1000000000+(brtlvl/2)+(1000*brtlvl));
-            break; 
-        case 5:
-            return (1000000000+(brtlvl/5)+(1000*brtlvl));
-            break; 
-        case 6:
-            return (1000000000+(brtlvl/3)+(1000*(brtlvl/3))+(1000000*(brtlvl/3)));
-            break; 
+    if(level == 0){    
+        switch (pid)
+        {
+            case 0:
+                return (1000000000+brtlvl);
+                break;
+            case 1:
+                return (1000000000+(brtlvl/4)+(1000*(brtlvl/4))+(1000000*(brtlvl/4)));
+                break;
+            case 2:
+                return (1000000000+brtlvl);
+                break;
+            case 3:
+                return (1000000000+(brtlvl/2)+(1000*brtlvl/2));
+                break;    
+            case 4:
+                return (1000000000+(brtlvl/2)+(1000*brtlvl/2));
+                break; 
+            case 5:
+                return (1000000000+(brtlvl/4)+(1000*(brtlvl/4))+(1000000*(brtlvl/4)));
+                break; 
+            case 6:
+                return (1000000000+(brtlvl/4)+(1000*(brtlvl/4))+(1000000*(brtlvl/4)));
+                break; 
+        }
+    }
+    else if(level == 1){
+        switch (pid)
+        {
+            case 0:
+                return (1000000000+brtlvl*1000);
+                break;
+            case 1:
+                return (1000000000+(brtlvl/4)+(1000*(brtlvl/4))+(1000000*(brtlvl/4)));
+                break;
+            case 2:
+                return (1000000000+brtlvl*1000);
+                break;
+            case 3:
+                return (1000000000+(brtlvl/6)+(1000*(int)(brtlvl*0.75))+(1000000*(brtlvl/6)));
+                break;    
+            case 4:
+                return (1000000000+(brtlvl/6)+(1000*(int)(brtlvl*0.75))+(1000000*(brtlvl/6)));
+                break; 
+            case 5:
+                return (1000000000+(brtlvl/4)+(1000*(brtlvl/4))+(1000000*(brtlvl/4)));
+                break; 
+            case 6:
+                return (1000000000+(brtlvl/4)+(1000*(brtlvl/4))+(1000000*(brtlvl/4)));
+                break; 
+        }
     }
 }
 
-bool movePiece(int* currSpot, int direction, int pid, int orientation, int pieceColor, int* userBoard){            //Returns true if at bottom
+bool movePiece(int* currSpot, int direction, int pid, int orientation, int pieceColor, int * userScore, int * currLevel, int* userBoard){            //Returns true if at bottom
     int tempPiece[4];
     loadPiece(pid, orientation, tempPiece);
     for(int i = 0; i < 4; i++){                                             //Erase current color value
@@ -393,7 +441,7 @@ bool movePiece(int* currSpot, int direction, int pid, int orientation, int piece
                 for(int i = 0; i < 4; i++){                                             //Erase current color value
                     userBoard[*currSpot+tempPiece[i]] = pieceColor;
                 }
-                checkForRows(16,16,userBoard);
+                checkForRows(16,16, userScore, currLevel, userBoard);
                 return true;                                                            //If it is touching another piece, tell caller that it can drop next piece
             }
             else{                                                                   //Otherwise, move piece down in array
@@ -495,7 +543,7 @@ bool isSpotLegal(int newSpot, int pid, int orientation, int* userBoard){      //
     return true;
 }
 
-void checkForRows(int numRows, int numColumns, int* userBoard){               //Function to scan for any complete rows that need to be erased per game rules
+void checkForRows(int numRows, int numColumns, int * userScore, int * currLevel, int * userBoard){               //Function to scan for any complete rows that need to be erased per game rules
     int i;                                                                      //i and j are multipurpose loop variables
     int j;  
     for(i = 0; i < numRows; i++){                                               //Loop for each row of board
@@ -508,6 +556,11 @@ void checkForRows(int numRows, int numColumns, int* userBoard){               //
         if(isEqual){                                                                    //If there is a complete row, erase it and call the function to shift rows down
             for(j = 0; j < numRows; j++){
                 userBoard[j+i*numColumns] = 0;
+            }
+            *userScore = *userScore+1;
+            if(*userScore%5 == 0 && *currLevel < 1){
+                levelUp(*currLevel,(*currLevel) + 1, 256, 20, tetris);
+                *currLevel = *currLevel + 1;
             }
             shiftRowsDown(i, numRows, numColumns, userBoard);
         }
